@@ -28,6 +28,61 @@
 
 <script>
 
+/*
+ * Circle prototype with methods for randomizing and updating position
+ */
+function Circle() {
+  this.randomize();
+}
+
+Circle.prototype.randomize = function() {
+  this.x = Math.random() * w;
+  this.y = Math.random() * h;
+  this.vx = Math.random() * 3 - 1.5;
+  this.vy = Math.random() * 3 - 1.5;
+  this.r = Math.random() * 10 + 10;
+}
+
+Circle.prototype.update_position = function() {
+  this.x += this.vx;
+  this.y += this.vy;
+
+  if (this.x - this.r <= 0 || this.x + this.r >= w) {
+    this.vx *= -1;
+  }
+  if (this.y - this.r <= 0 || this.y + this.r >= h) {
+    this.vy *= -1;
+  }
+  this.x = Math.max(this.x, this.r);
+  this.x = Math.min(this.x, w - this.r);
+  this.y = Math.max(this.y, this.r);
+  this.y = Math.min(this.y, h - this.r);
+}
+
+/*
+ * Star prototype with methods for randomizing and updating position
+ */
+function Star() {
+  this.randomize();
+}
+
+Star.prototype.randomize = function() {
+  this.x = Math.random() * w;
+  this.y = Math.random() * h;
+  this.o = Math.random() * 0.8 + 0.2;
+}
+
+Star.prototype.update_position = function() {
+  this.x += warp * (this.x - w / 2);
+  this.y += warp * (this.y - h / 2);
+
+  if (this.x <= 0 || this.x >= w || this.y <= 0 || this.y >= h) {
+    this.randomize();
+  }
+}
+
+// ===============================================================================================
+
 noise.seed(Math.random());
 var frame = 0;
 var ratio = window.devicePixelRatio ? window.devicePixelRatio : 1
@@ -45,52 +100,16 @@ var ctx = c.getContext('2d');
 ctx.scale(ratio, ratio)
 
 for (var i = 0; i < 100; i++) {
-  circles.push({
-    x: Math.random() * w,
-    y: Math.random() * h,
-    vx: Math.random() * 3 - 1.5,
-    vy: Math.random() * 3 - 1.5,
-    r: Math.random() * 10 + 10
-  })
+  circles.push(new Circle());
 };
 for (var i = 0; i < 300; i++) {
-  dots.push({
-    x: Math.random() * w,
-    y: Math.random() * h,
-    o: Math.random() * 0.8 + 0.2
-  })
+  dots.push(new Star());
 }
 
 ctx.lineWidth = 0.8;
 ctx.imageSmoothingEnabled = true;
 draw();
 
-
-function update_position(circle) {
-  circle.x += circle.vx;
-  circle.y += circle.vy;
-
-  if (circle.x - circle.r <= 0 || circle.x + circle.r >= w) {
-    circle.vx *= -1;
-  }
-  if (circle.y - circle.r <= 0 || circle.y + circle.r >= h) {
-    circle.vy *= -1;
-  }
-  circle.x = Math.max(circle.x, circle.r);
-  circle.x = Math.min(circle.x, w - circle.r);
-  circle.y = Math.max(circle.y, circle.r);
-  circle.y = Math.min(circle.y, h - circle.r);
-}
-
-function update_dot(dot) {
-  dot.x += warp * (dot.x - w / 2);
-  dot.y += warp * (dot.y - h / 2);
-
-  if (dot.x <= 0 || dot.x >= w || dot.y <= 0 || dot.y >= h) {
-    dot.x = Math.random() * w;
-    dot.y = Math.random() * h;
-  }
-}
 
 function update_collision(circle1, circle2) {
 
@@ -125,7 +144,6 @@ function update_collision(circle1, circle2) {
   large_circle.vy = new_large_velocity[1];
 }
 
-
 function distance(circle1, circle2) {
   var dx = (circle1.x - circle2.x);
   var dy = (circle1.y - circle2.y);
@@ -140,14 +158,15 @@ function largest(circle1, circle2) {
   return circle1.r >= circle2.r ? circle1 : circle2;
 }
 
+
 window.requestAnimationFrame(main_loop);
 
 function main_loop() {
   for (var i = 0; i < circles.length; i++) {
-    update_position(circles[i]);
+    circles[i].update_position();
   }
   for (var i = 0; i < dots.length; i++) {
-    update_dot(dots[i]);
+    dots[i].update_position();
   }
   for (var i = 0; i < circles.length; i++) {
     for (var j = i+1; j < circles.length; j++) {
@@ -159,12 +178,7 @@ function main_loop() {
     for (var i = 0; i < circles.length; i++) {
       var circle = circles[i];
       if (circle.r <= 0) {
-        circle.x = Math.random() * w;
-        circle.y = Math.random() * h;
-        circle.vx = Math.random() * 3 - 1.5;
-        circle.vy = Math.random() * 3 - 1.5;
-        circle.r = Math.random() * 10 + 10;
-
+        circle.randomize();
         break;
       }
     };
