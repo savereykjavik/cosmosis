@@ -11,7 +11,7 @@
       width: 100%;
     }
     #canvas-container {
-      
+
     }
   </style>
   <script src="perlin.js"></script>
@@ -30,19 +30,24 @@
 
 noise.seed(Math.random());
 var frame = 0;
+var ratio = window.devicePixelRatio ? window.devicePixelRatio : 1
 var warp = 0.0002;
 
 var circles = [];
 var dots = [];
 var c = document.getElementById('my_canvas');
-c.width = window.innerWidth;
-c.height = window.innerHeight;
+var w = window.innerWidth, h = window.innerHeight;
+c.width = w * ratio;
+c.height = h * ratio;
+c.style.width = w + 'px';
+c.style.height = h + 'px';
 var ctx = c.getContext('2d');
+ctx.scale(ratio, ratio)
 
 for (var i = 0; i < 100; i++) {
   circles.push({
-    x: Math.random() * c.width,
-    y: Math.random() * c.height,
+    x: Math.random() * w,
+    y: Math.random() * h,
     vx: Math.random() * 3 - 1.5,
     vy: Math.random() * 3 - 1.5,
     r: Math.random() * 10 + 10
@@ -50,8 +55,8 @@ for (var i = 0; i < 100; i++) {
 };
 for (var i = 0; i < 300; i++) {
   dots.push({
-    x: Math.random() * c.width,
-    y: Math.random() * c.height,
+    x: Math.random() * w,
+    y: Math.random() * h,
     o: Math.random() * 0.8 + 0.2
   })
 }
@@ -64,26 +69,26 @@ draw();
 function update_position(circle) {
   circle.x += circle.vx;
   circle.y += circle.vy;
-  
-  if (circle.x - circle.r <= 0 || circle.x + circle.r >= c.width) {
+
+  if (circle.x - circle.r <= 0 || circle.x + circle.r >= w) {
     circle.vx *= -1;
   }
-  if (circle.y - circle.r <= 0 || circle.y + circle.r >= c.height) {
+  if (circle.y - circle.r <= 0 || circle.y + circle.r >= h) {
     circle.vy *= -1;
   }
   circle.x = Math.max(circle.x, circle.r);
-  circle.x = Math.min(circle.x, c.width - circle.r);
+  circle.x = Math.min(circle.x, w - circle.r);
   circle.y = Math.max(circle.y, circle.r);
-  circle.y = Math.min(circle.y, c.height - circle.r);
+  circle.y = Math.min(circle.y, h - circle.r);
 }
 
 function update_dot(dot) {
-  dot.x += warp * (dot.x - c.width / 2);
-  dot.y += warp * (dot.y - c.height / 2);
-  
-  if (dot.x <= 0 || dot.x >= c.width || dot.y <= 0 || dot.y >= c.height) {
-    dot.x = Math.random() * c.width;
-    dot.y = Math.random() * c.height;
+  dot.x += warp * (dot.x - w / 2);
+  dot.y += warp * (dot.y - h / 2);
+
+  if (dot.x <= 0 || dot.x >= w || dot.y <= 0 || dot.y >= h) {
+    dot.x = Math.random() * w;
+    dot.y = Math.random() * h;
   }
 }
 
@@ -121,8 +126,6 @@ function update_collision(circle1, circle2) {
 }
 
 
-
-
 function distance(circle1, circle2) {
   var dx = (circle1.x - circle2.x);
   var dy = (circle1.y - circle2.y);
@@ -156,8 +159,8 @@ function main_loop() {
     for (var i = 0; i < circles.length; i++) {
       var circle = circles[i];
       if (circle.r <= 0) {
-        circle.x = Math.random() * c.width;
-        circle.y = Math.random() * c.height;
+        circle.x = Math.random() * w;
+        circle.y = Math.random() * h;
         circle.vx = Math.random() * 3 - 1.5;
         circle.vy = Math.random() * 3 - 1.5;
         circle.r = Math.random() * 10 + 10;
@@ -175,7 +178,7 @@ function main_loop() {
 function clear() {
   ctx.beginPath();
   ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.fillRect(0, 0, w, h);
 }
 
 function draw() {
@@ -191,8 +194,8 @@ function draw() {
     ctx.beginPath();
     ctx.moveTo(dot.x, dot.y);
     ctx.lineTo(
-      dot.x + (dot.x - c.width/2) * warp * 10,
-      dot.y + (dot.y - c.height/2) * warp * 10);
+      dot.x + (dot.x - w/2) * warp * 10,
+      dot.y + (dot.y - h/2) * warp * 10);
     ctx.stroke();
   }
 
@@ -223,7 +226,7 @@ function draw() {
       ctx.stroke();
     }
   }
-  
+
 }
 
 function getMousePos(canvas, evt) {
@@ -236,11 +239,9 @@ function getMousePos(canvas, evt) {
 
 c.addEventListener('mousemove', function(evt) {
   var m = getMousePos(c, evt);
-  // warp = 0.1 * m.y / c.height;
+  // warp = 0.1 * m.y / h;
 }, false);
-    
+
     </script>
 </body>
 </html>
-
- 
