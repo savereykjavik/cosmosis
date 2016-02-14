@@ -1,0 +1,246 @@
+<html>
+<head>
+  <title>Osmosis</title>
+  <style>
+    body {
+      background-color: #333;
+      padding: 0;
+      margin: 0;
+    }
+    #container {
+      width: 100%;
+    }
+    #canvas-container {
+      
+    }
+  </style>
+  <script src="perlin.js"></script>
+
+</head>
+<body>
+  <div id="container">
+    <div id="canvas-container">
+      <canvas id="my_canvas">
+          Your browser does not support the HTML5 canvas tag.
+      </canvas>
+    </div>
+  </div>
+
+<script>
+
+noise.seed(Math.random());
+var frame = 0;
+var warp = 0.0002;
+
+var circles = [];
+var dots = [];
+var c = document.getElementById('my_canvas');
+c.width = window.innerWidth;
+c.height = window.innerHeight;
+var ctx = c.getContext('2d');
+
+for (var i = 0; i < 100; i++) {
+  circles.push({
+    x: Math.random() * c.width,
+    y: Math.random() * c.height,
+    vx: Math.random() * 3 - 1.5,
+    vy: Math.random() * 3 - 1.5,
+    r: Math.random() * 10 + 10
+  })
+};
+for (var i = 0; i < 300; i++) {
+  dots.push({
+    x: Math.random() * c.width,
+    y: Math.random() * c.height,
+    o: Math.random() * 0.8 + 0.2
+  })
+}
+
+ctx.lineWidth = 0.8;
+ctx.imageSmoothingEnabled = true;
+draw();
+
+
+function update_position(circle) {
+  circle.x += circle.vx;
+  circle.y += circle.vy;
+  
+  if (circle.x - circle.r <= 0 || circle.x + circle.r >= c.width) {
+    circle.vx *= -1;
+  }
+  if (circle.y - circle.r <= 0 || circle.y + circle.r >= c.height) {
+    circle.vy *= -1;
+  }
+  circle.x = Math.max(circle.x, circle.r);
+  circle.x = Math.min(circle.x, c.width - circle.r);
+  circle.y = Math.max(circle.y, circle.r);
+  circle.y = Math.min(circle.y, c.height - circle.r);
+}
+
+function update_dot(dot) {
+  dot.x += warp * (dot.x - c.width / 2);
+  dot.y += warp * (dot.y - c.height / 2);
+  
+  if (dot.x <= 0 || dot.x >= c.width || dot.y <= 0 || dot.y >= c.height) {
+    dot.x = Math.random() * c.width;
+    dot.y = Math.random() * c.height;
+  }
+}
+
+function update_collision(circle1, circle2) {
+
+  if (circle1.r <= 0 || circle2.r <= 0) {
+    return;
+  }
+
+  var overlap = circle1.r + circle2.r - distance(circle1, circle2);
+  if (overlap <= 0) {
+    return;
+  };
+
+  // console.log(overlap)
+  var small_circle = smallest(circle1, circle2);
+  var large_circle = largest(circle1, circle2);
+  var small_mass = Math.PI * Math.pow(small_circle.r, 2);
+  var large_mass = Math.PI * Math.pow(large_circle.r, 2);
+
+  var swap_mass = small_mass - Math.PI * Math.pow(small_circle.r - overlap, 2);
+  var new_large_mass = large_mass + Math.max(swap_mass, 0);
+
+  var swap_momentum = [ swap_mass * small_circle.vx, swap_mass * small_circle.vy ];
+  var large_momentum = [ large_mass * large_circle.vx, large_mass * large_circle.vy ];
+  var new_large_momentum = [ large_momentum[0]+swap_momentum[0], large_momentum[1]+swap_momentum[1] ];
+  var new_large_velocity = [ new_large_momentum[0]/new_large_mass, new_large_momentum[1]/new_large_mass ];
+
+  large_circle.r = Math.sqrt(new_large_mass / Math.PI);
+  small_circle.r -= overlap;
+  small_circle.r = Math.max(small_circle.r, 0);
+
+  large_circle.vx = new_large_velocity[0];
+  large_circle.vy = new_large_velocity[1];
+}
+
+
+
+
+function distance(circle1, circle2) {
+  var dx = (circle1.x - circle2.x);
+  var dy = (circle1.y - circle2.y);
+
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function smallest(circle1, circle2) {
+  return circle1.r <= circle2.r ? circle1 : circle2;
+}
+function largest(circle1, circle2) {
+  return circle1.r >= circle2.r ? circle1 : circle2;
+}
+
+window.requestAnimationFrame(main_loop);
+
+function main_loop() {
+  for (var i = 0; i < circles.length; i++) {
+    update_position(circles[i]);
+  }
+  for (var i = 0; i < dots.length; i++) {
+    update_dot(dots[i]);
+  }
+  for (var i = 0; i < circles.length; i++) {
+    for (var j = i+1; j < circles.length; j++) {
+      update_collision(circles[i], circles[j]);
+    }
+  }
+
+  if (Math.random() < 0.003) {
+    for (var i = 0; i < circles.length; i++) {
+      var circle = circles[i];
+      if (circle.r <= 0) {
+        circle.x = Math.random() * c.width;
+        circle.y = Math.random() * c.height;
+        circle.vx = Math.random() * 3 - 1.5;
+        circle.vy = Math.random() * 3 - 1.5;
+        circle.r = Math.random() * 10 + 10;
+
+        break;
+      }
+    };
+  }
+
+  draw();
+  frame++;
+  window.requestAnimationFrame(main_loop);
+}
+
+function clear() {
+  ctx.beginPath();
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, c.width, c.height);
+}
+
+function draw() {
+  clear();
+  ctx.lineWidth = 1;
+
+  // dots
+  for (var i = 0; i < dots.length; i++) {
+    var dot = dots[i];
+    ctx.strokeStyle = 'rgba(255, 255, 255, ' + dot.o + ')';
+
+    // ctx.fillRect(dot.x, dot.y, 1, 1);
+    ctx.beginPath();
+    ctx.moveTo(dot.x, dot.y);
+    ctx.lineTo(
+      dot.x + (dot.x - c.width/2) * warp * 10,
+      dot.y + (dot.y - c.height/2) * warp * 10);
+    ctx.stroke();
+  }
+
+  // circles
+  ctx.strokeStyle = '#ffffff';
+  ctx.fillStyle = '#ffffff';
+  for (var i = 0; i < circles.length; i++) {
+    var circle = circles[i];
+
+    ctx.beginPath();
+    ctx.arc(circle.x, circle.y, circle.r, 0, 2 * Math.PI, false);
+    // ctx.rect(circle.x - circle.r, circle.y - circle.r, circle.r*2, circle.r*2);
+    ctx.stroke();
+    ctx.fill();
+  }
+
+  // lines
+  ctx.strokeStyle = '#666699';
+  for (var i = 0; i < circles.length; i++) {
+    var circle = circles[i];
+
+    if (circle.r > 0) {
+      ctx.beginPath();
+      ctx.moveTo(circle.x, circle.y);
+      ctx.lineTo(
+        circle.x + circle.vx*100,
+        circle.y + circle.vy*100);
+      ctx.stroke();
+    }
+  }
+  
+}
+
+function getMousePos(canvas, evt) {
+  var rect = canvas.getBoundingClientRect();
+  return {
+    x: evt.clientX - rect.left,
+    y: evt.clientY - rect.top
+  };
+}
+
+c.addEventListener('mousemove', function(evt) {
+  var m = getMousePos(c, evt);
+  // warp = 0.1 * m.y / c.height;
+}, false);
+    
+    </script>
+</body>
+</html>
+
+ 
