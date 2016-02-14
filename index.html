@@ -33,6 +33,7 @@
  */
 function Circle() {
   this.randomize();
+  this.growth = 1.0;
 }
 
 Circle.prototype.randomize = function() {
@@ -41,11 +42,12 @@ Circle.prototype.randomize = function() {
   this.vx = Math.random() * 3 - 1.5;
   this.vy = Math.random() * 3 - 1.5;
   this.r = Math.random() * 10 + 10;
+  this.growth = 0.0;
 }
 
 Circle.prototype.update_position = function() {
-  this.x += this.vx;
-  this.y += this.vy;
+  this.x += this.vx * Math.sqrt(this.growth);
+  this.y += this.vy * Math.sqrt(this.growth);
 
   if (this.x - this.r <= 0 || this.x + this.r >= w) {
     this.vx *= -1;
@@ -57,6 +59,8 @@ Circle.prototype.update_position = function() {
   this.x = Math.min(this.x, w - this.r);
   this.y = Math.max(this.y, this.r);
   this.y = Math.min(this.y, h - this.r);
+
+  this.growth = Math.min(this.growth + 0.02, 1.0);
 }
 
 /*
@@ -220,14 +224,14 @@ function draw() {
     var circle = circles[i];
 
     ctx.beginPath();
-    ctx.arc(circle.x, circle.y, circle.r, 0, 2 * Math.PI, false);
+    ctx.arc(circle.x, circle.y, circle.r * Math.sqrt(circle.growth), 0, 2 * Math.PI, false);
     // ctx.rect(circle.x - circle.r, circle.y - circle.r, circle.r*2, circle.r*2);
     ctx.stroke();
     ctx.fill();
   }
 
   // lines
-  ctx.strokeStyle = '#666699';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
   for (var i = 0; i < circles.length; i++) {
     var circle = circles[i];
 
